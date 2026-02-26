@@ -12,7 +12,6 @@
         h2 { text-align: center; color: #1a73e8; margin-top: 5px; font-size: 22px; }
         h3 { font-size: 16px; margin-top: 0; margin-bottom: 12px; color: #555; border-bottom: 2px solid #eee; padding-bottom: 8px; }
         
-        /* แก้ไขตรงนี้: เจาะจงเฉพาะช่องพิมพ์ข้อความและตัวเลขเท่านั้น */
         input[type="text"], input[type="number"] { 
             padding: 12px 10px; 
             border: 1px solid #ccc; 
@@ -31,6 +30,10 @@
 
         .btn-calc { background-color: #34a853; width: 100%; font-size: 18px; padding: 15px; margin-top: 5px; border-radius: 10px; }
         .btn-calc:hover { background-color: #2b8c45; }
+
+        /* ปุ่มคัดลอกข้อความสีเขียวแบบ LINE */
+        .btn-copy { background-color: #00B900; width: 100%; font-size: 16px; padding: 15px; margin-top: 15px; border-radius: 10px; display: none; }
+        .btn-copy:hover { background-color: #009900; }
 
         .chip { display: inline-block; background: #e8f0fe; color: #1a73e8; padding: 6px 14px; border-radius: 20px; margin: 4px; font-size: 14px; font-weight: bold; }
         
@@ -51,7 +54,6 @@
             user-select: none;
             -webkit-tap-highlight-color: transparent;
         }
-        /* แก้ไขตรงนี้: คืนค่าให้ Checkbox กลับมาแสดงผลติ๊กถูกได้ตามปกติ */
         .checkbox-group input[type="checkbox"] { 
             width: 18px; 
             height: 18px; 
@@ -90,13 +92,23 @@
 
     <div class="card">
         <h3>3. สรุปยอดโอน 💰</h3>
+        
+        <div style="margin-bottom: 15px;">
+            <div style="font-size: 14px; color: #555; margin-bottom: 5px; font-weight: bold;">บัญชีรับเงิน / พร้อมเพย์:</div>
+            <input type="text" id="paymentInfo" placeholder="เช่น พร้อมเพย์ 081xxxxxxx (ต้น)">
+        </div>
+
         <button class="btn-calc" onclick="calculate()">คำนวณยอดทันที</button>
+        
         <div id="result" style="margin-top: 15px;"></div>
+        
+        <button id="btnCopy" class="btn-copy" onclick="copyToLine()">📋 คัดลอกข้อความส่ง LINE</button>
     </div>
 
     <script>
         let people = [];
         let items = [];
+        let finalMessage = ""; // ตัวแปรเก็บข้อความที่จะส่งเข้า LINE
 
         function addPerson() {
             const nameInput = document.getElementById('personName');
@@ -179,13 +191,55 @@
 
             const resultDiv = document.getElementById('result');
             let totalBill = 0;
+            
+            // สร้าง HTML สำหรับแสดงบนหน้าเว็บ
             let html = '<ul>';
+            
+            // สร้างข้อความ Text สำหรับคัดลอกลง LINE
+            finalMessage = "สรุปยอดค่าอาหารและเครื่องดื่ม 💸🍻\n\n";
+
             for (const [person, amount] of Object.entries(totals)) {
                 html += `<li><span><strong>${person}</strong></span> <span>${amount.toFixed(2)} ฿</span></li>`;
+                finalMessage += `- ${person}: ${amount.toFixed(2)} บาท\n`;
                 totalBill += amount;
             }
+            
             html += `</ul><div style="margin-top: 15px; text-align: right; font-size: 18px; font-weight: bold; color: #d93025;">ยอดรวมบิล: ${totalBill.toFixed(2)} บาท</div>`;
             resultDiv.innerHTML = html;
+
+            finalMessage += `\nยอดรวมบิล: ${totalBill.toFixed(2)} บาท`;
+
+            // ดึงข้อมูลพร้อมเพย์มาต่อท้ายข้อความ LINE
+            const paymentInfo = document.getElementById('paymentInfo').value.trim();
+            if (paymentInfo) {
+                finalMessage += `\n\nโอนเงินได้ที่:\n${paymentInfo} 🙏`;
+            }
+
+            // แสดงปุ่มคัดลอก
+            document.getElementById('btnCopy').style.display = 'block';
+        }
+
+        // ฟังก์ชันสำหรับคัดลอกข้อความ
+        function copyToLine() {
+            // คำนวณใหม่รอบนึงเผื่อผู้ใช้แก้เลขบัญชีหลังกดคำนวณ
+            calculate(); 
+
+            navigator.clipboard.writeText(finalMessage).then(() => {
+                const btn = document.getElementById('btnCopy');
+                const originalText = btn.innerHTML;
+                
+                // เปลี่ยนข้อความปุ่มเพื่อให้รู้ว่าก็อปปี้แล้ว
+                btn.innerHTML = "✅ คัดลอกสำเร็จ! (เอาไปวางในแชทได้เลย)";
+                btn.style.backgroundColor = "#2b8c45";
+
+                // เปลี่ยนกลับเป็นเหมือนเดิมหลังจาก 3 วินาที
+                setTimeout(() => {
+                    btn.innerHTML = originalText;
+                    btn.style.backgroundColor = "#00B900";
+                }, 3000);
+            }).catch(err => {
+                alert("เกิดข้อผิดพลาดในการคัดลอก กรุณาคัดลอกด้วยตัวเองครับ");
+            });
         }
     </script>
 </body>
