@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>แอปหารค่าข้าว</title>
+    <style>
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 15px; max-width: 500px; margin: auto; background-color: #f0f2f5; color: #333; }
+        .card { background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.05); margin-bottom: 20px; }
+        h2 { text-align: center; color: #1a73e8; margin-top: 0; }
+        h3 { font-size: 16px; margin-top: 0; margin-bottom: 10px; color: #555; border-bottom: 2px solid #eee; padding-bottom: 5px; }
+        input { padding: 10px; box-sizing: border-box; border: 1px solid #ccc; border-radius: 6px; font-size: 14px; }
+        .flex-row { display: flex; gap: 8px; margin-bottom: 10px; }
+        button { background-color: #1a73e8; color: white; border: none; padding: 10px 15px; border-radius: 6px; cursor: pointer; font-weight: bold; }
+        button:hover { background-color: #1557b0; }
+        .btn-calc { background-color: #34a853; width: 100%; font-size: 16px; padding: 12px; margin-top: 10px; }
+        .btn-calc:hover { background-color: #2b8c45; }
+        .chip { display: inline-block; background: #e8f0fe; color: #1a73e8; padding: 5px 12px; border-radius: 20px; margin: 3px; font-size: 13px; font-weight: bold; }
+        .item-row { border: 1px solid #eee; padding: 12px; border-radius: 8px; margin-bottom: 12px; background: #fafafa; }
+        .item-title { font-weight: bold; font-size: 15px; color: #d93025; margin-bottom: 8px; }
+        .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; }
+        .checkbox-group label { background: white; border: 1px solid #ddd; padding: 6px 10px; border-radius: 20px; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 5px; }
+        .checkbox-group input:checked + span { color: #1a73e8; font-weight: bold; }
+        ul { list-style: none; padding: 0; margin: 0; }
+        li { display: flex; justify-content: space-between; padding: 8px 0; border-bottom: 1px dashed #ccc; font-size: 16px; }
+    </style>
+</head>
+<body>
+
+    <h2>🍽️ หารค่าข้าวกัน!</h2>
+
+    <div class="card">
+        <h3>1. ใครไปบ้าง? (พิมพ์ชื่อแล้วกด +)</h3>
+        <div class="flex-row">
+            <input type="text" id="personName" placeholder="ชื่อเพื่อน..." style="flex: 1;">
+            <button onclick="addPerson()">เพิ่ม</button>
+        </div>
+        <div id="peopleList"></div>
+    </div>
+
+    <div class="card">
+        <h3>2. กินอะไรไปบ้าง?</h3>
+        <div class="flex-row">
+            <input type="text" id="itemName" placeholder="ชื่อเมนู" style="flex: 2;">
+            <input type="number" id="itemPrice" placeholder="ราคา" style="flex: 1;">
+            <button onclick="addItem()">เพิ่ม</button>
+        </div>
+        <div id="itemsList" style="margin-top: 15px;"></div>
+    </div>
+
+    <div class="card">
+        <h3>3. สรุปยอดโอน 💰</h3>
+        <button class="btn-calc" onclick="calculate()">คำนวณยอดทันที</button>
+        <div id="result" style="margin-top: 15px;"></div>
+    </div>
+
+    <script>
+        let people = [];
+        let items = [];
+
+        function addPerson() {
+            const nameInput = document.getElementById('personName');
+            const name = nameInput.value.trim();
+            if (name && !people.includes(name)) {
+                people.push(name);
+                nameInput.value = '';
+                renderPeople();
+                renderItems(); // อัปเดตเมนูอาหารให้มีชื่อคนใหม่
+            }
+        }
+
+        function renderPeople() {
+            const list = document.getElementById('peopleList');
+            list.innerHTML = people.map(p => `<span class="chip">${p}</span>`).join('');
+        }
+
+        function addItem() {
+            const nameInput = document.getElementById('itemName');
+            const priceInput = document.getElementById('itemPrice');
+            const name = nameInput.value.trim();
+            const price = parseFloat(priceInput.value);
+
+            if (name && !isNaN(price) && price > 0) {
+                // ค่าเริ่มต้น: ให้ทุกคนที่เพิ่มชื่อไว้ หารเมนูนี้ร่วมกัน
+                items.push({ id: Date.now(), name, price, sharedBy: [...people] }); 
+                nameInput.value = '';
+                priceInput.value = '';
+                renderItems();
+            } else {
+                alert('กรุณาใส่ชื่อเมนูและราคาให้ถูกต้อง');
+            }
+        }
+
+        function toggleShare(itemId, personName) {
+            const item = items.find(i => i.id === itemId);
+            if (item) {
+                if (item.sharedBy.includes(personName)) {
+                    item.sharedBy = item.sharedBy.filter(p => p !== personName); // เอาออก
+                } else {
+                    item.sharedBy.push(personName); // เพิ่มเข้า
+                }
+            }
+        }
+
+        function renderItems() {
+            const list = document.getElementById('itemsList');
+            list.innerHTML = items.map(item => `
+                <div class="item-row">
+                    <div class="item-title">${item.name} - ${item.price} บาท</div>
+                    <div style="font-size: 12px; color: #666; margin-bottom: 5px;">ติ๊กเครื่องหมายถูกเฉพาะคนที่กินเมนูนี้:</div>
+                    <div class="checkbox-group">
+                        ${people.map(p => `
+                            <label>
+                                <input type="checkbox" ${item.sharedBy.includes(p) ? 'checked' : ''} onchange="toggleShare(${item.id}, '${p}')">
+                                <span>${p}</span>
+                            </label>
+                        `).join('')}
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function calculate() {
+            if (people.length === 0) {
+                alert("กรุณาเพิ่มชื่อคนหารก่อนครับ!");
+                return;
+            }
+
+            const totals = {};
+            people.forEach(p => totals[p] = 0);
+
+            items.forEach(item => {
+                if (item.sharedBy.length > 0) {
+                    const splitAmount = item.price / item.sharedBy.length;
+                    item.sharedBy.forEach(p => {
+                        if(totals[p] !== undefined) totals[p] += splitAmount;
+                    });
+                }
+            });
+
+            const resultDiv = document.getElementById('result');
+            let totalBill = 0;
+            let html = '<ul>';
+            for (const [person, amount] of Object.entries(totals)) {
+                html += `<li><span><strong>${person}</strong></span> <span>${amount.toFixed(2)} ฿</span></li>`;
+                totalBill += amount;
+            }
+            html += `</ul><div style="margin-top: 15px; text-align: right; font-weight: bold; color: #d93025;">ยอดรวมบิล: ${totalBill.toFixed(2)} บาท</div>`;
+            resultDiv.innerHTML = html;
+        }
+    </script>
+</body>
+</html>
