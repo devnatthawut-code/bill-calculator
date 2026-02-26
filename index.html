@@ -12,7 +12,7 @@
         h2 { text-align: center; color: #1a73e8; margin-top: 5px; font-size: 22px; }
         h3 { font-size: 16px; margin-top: 0; margin-bottom: 12px; color: #555; border-bottom: 2px solid #eee; padding-bottom: 8px; }
         
-        input[type="text"], input[type="number"] { 
+        input[type="text"], input[type="number"], input[type="file"] { 
             padding: 12px 10px; 
             border: 1px solid #ccc; 
             border-radius: 8px; 
@@ -20,6 +20,7 @@
             width: 100%;
             appearance: none; 
         }
+        input[type="file"] { padding: 8px; font-size: 14px; background: #fafafa; }
         
         .flex-row { display: flex; gap: 8px; margin-bottom: 10px; width: 100%; }
         .flex-row input { min-width: 0; }
@@ -31,8 +32,7 @@
         .btn-calc { background-color: #34a853; width: 100%; font-size: 18px; padding: 15px; margin-top: 5px; border-radius: 10px; }
         .btn-calc:hover { background-color: #2b8c45; }
 
-        /* ปุ่มคัดลอกข้อความสีเขียวแบบ LINE */
-        .btn-copy { background-color: #00B900; width: 100%; font-size: 16px; padding: 15px; margin-top: 15px; border-radius: 10px; display: none; }
+        .btn-copy { background-color: #00B900; width: 100%; font-size: 16px; padding: 12px; margin-top: 15px; border-radius: 8px; display: none; }
         .btn-copy:hover { background-color: #009900; }
 
         .chip { display: inline-block; background: #e8f0fe; color: #1a73e8; padding: 6px 14px; border-radius: 20px; margin: 4px; font-size: 14px; font-weight: bold; }
@@ -41,30 +41,16 @@
         .item-title { font-weight: bold; font-size: 16px; color: #d93025; margin-bottom: 10px; }
         
         .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; }
-        .checkbox-group label { 
-            background: white; 
-            border: 1px solid #ddd; 
-            padding: 8px 12px; 
-            border-radius: 20px; 
-            font-size: 14px; 
-            cursor: pointer; 
-            display: flex; 
-            align-items: center; 
-            gap: 5px; 
-            user-select: none;
-            -webkit-tap-highlight-color: transparent;
-        }
-        .checkbox-group input[type="checkbox"] { 
-            width: 18px; 
-            height: 18px; 
-            accent-color: #1a73e8; 
-            margin: 0; 
-            appearance: auto; 
-        }
+        .checkbox-group label { background: white; border: 1px solid #ddd; padding: 8px 12px; border-radius: 20px; font-size: 14px; cursor: pointer; display: flex; align-items: center; gap: 5px; user-select: none; -webkit-tap-highlight-color: transparent; }
+        .checkbox-group input[type="checkbox"] { width: 18px; height: 18px; accent-color: #1a73e8; margin: 0; appearance: auto; }
         .checkbox-group input:checked + span { color: #1a73e8; font-weight: bold; }
         
         ul { list-style: none; padding: 0; margin: 0; }
         li { display: flex; justify-content: space-between; padding: 10px 0; border-bottom: 1px dashed #ccc; font-size: 16px; }
+        
+        .qr-container { text-align: center; margin-top: 20px; padding: 10px; border: 1px dashed #ccc; border-radius: 8px; background: #fff; }
+        .qr-container img { max-width: 100%; max-height: 250px; border-radius: 8px; }
+        .qr-title { font-weight: bold; color: #1a73e8; margin-bottom: 10px; }
     </style>
 </head>
 <body>
@@ -91,24 +77,42 @@
     </div>
 
     <div class="card">
-        <h3>3. สรุปยอดโอน 💰</h3>
-        
-        <div style="margin-bottom: 15px;">
-            <div style="font-size: 14px; color: #555; margin-bottom: 5px; font-weight: bold;">บัญชีรับเงิน / พร้อมเพย์:</div>
-            <input type="text" id="paymentInfo" placeholder="เช่น พร้อมเพย์ 081xxxxxxx (ต้น)">
+        <h3>3. ช่องทางรับเงิน (เลือกอย่างใดอย่างหนึ่ง)</h3>
+        <div style="margin-bottom: 10px;">
+            <label style="font-size: 14px; color: #666;">พิมพ์เบอร์พร้อมเพย์ (สร้าง QR ให้อัตโนมัติ)</label>
+            <input type="text" id="promptPay" placeholder="เช่น 0812345678" style="margin-top: 5px;">
         </div>
+        <div style="text-align: center; color: #999; margin-bottom: 10px;">-- หรือ --</div>
+        <div>
+            <label style="font-size: 14px; color: #666;">แนบรูป QR Code / สมุดบัญชีของตัวเอง</label>
+            <input type="file" id="uploadQR" accept="image/*" onchange="handleImageUpload(event)" style="margin-top: 5px;">
+        </div>
+    </div>
 
+    <div class="card">
+        <h3>4. สรุปยอดโอน 💰</h3>
         <button class="btn-calc" onclick="calculate()">คำนวณยอดทันที</button>
-        
         <div id="result" style="margin-top: 15px;"></div>
-        
-        <button id="btnCopy" class="btn-copy" onclick="copyToLine()">📋 คัดลอกข้อความส่ง LINE</button>
+        <button id="btnCopy" class="btn-copy" onclick="copyToClipboard()">📋 คัดลอกข้อความส่งเข้า LINE</button>
     </div>
 
     <script>
         let people = [];
         let items = [];
-        let finalMessage = ""; // ตัวแปรเก็บข้อความที่จะส่งเข้า LINE
+        let uploadedImage = "";
+        let summaryTextForLine = "";
+
+        // จัดการอัปโหลดรูป
+        function handleImageUpload(event) {
+            const file = event.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    uploadedImage = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        }
 
         function addPerson() {
             const nameInput = document.getElementById('personName');
@@ -189,56 +193,63 @@
                 }
             });
 
-            const resultDiv = document.getElementById('result');
             let totalBill = 0;
-            
-            // สร้าง HTML สำหรับแสดงบนหน้าเว็บ
             let html = '<ul>';
             
-            // สร้างข้อความ Text สำหรับคัดลอกลง LINE
-            finalMessage = "สรุปยอดค่าอาหารและเครื่องดื่ม 💸🍻\n\n";
+            // เตรียมข้อความสำหรับก๊อปปี้ลง LINE
+            summaryTextForLine = "สรุปยอดค่าอาหาร 🍽️💸\n\n";
 
             for (const [person, amount] of Object.entries(totals)) {
                 html += `<li><span><strong>${person}</strong></span> <span>${amount.toFixed(2)} ฿</span></li>`;
-                finalMessage += `- ${person}: ${amount.toFixed(2)} บาท\n`;
+                summaryTextForLine += `- ${person}: ${amount.toFixed(2)} บาท\n`;
                 totalBill += amount;
             }
-            
             html += `</ul><div style="margin-top: 15px; text-align: right; font-size: 18px; font-weight: bold; color: #d93025;">ยอดรวมบิล: ${totalBill.toFixed(2)} บาท</div>`;
-            resultDiv.innerHTML = html;
+            summaryTextForLine += `\n🔴 ยอดรวมทั้งหมด: ${totalBill.toFixed(2)} บาท\n`;
 
-            finalMessage += `\nยอดรวมบิล: ${totalBill.toFixed(2)} บาท`;
-
-            // ดึงข้อมูลพร้อมเพย์มาต่อท้ายข้อความ LINE
-            const paymentInfo = document.getElementById('paymentInfo').value.trim();
-            if (paymentInfo) {
-                finalMessage += `\n\nโอนเงินได้ที่:\n${paymentInfo} 🙏`;
+            // เช็คว่ามีการใส่พร้อมเพย์ หรือ อัปโหลดรูปไหม
+            const promptPayNo = document.getElementById('promptPay').value.trim();
+            if (promptPayNo) {
+                // สร้าง QR พร้อมเพย์อัตโนมัติ
+                html += `
+                <div class="qr-container">
+                    <div class="qr-title">📲 สแกนจ่ายพร้อมเพย์</div>
+                    <img src="https://promptpay.io/${promptPayNo}.png" alt="PromptPay QR">
+                    <div style="margin-top: 5px; font-size: 14px; color: #555;">${promptPayNo}</div>
+                </div>`;
+                summaryTextForLine += `\n📲 โอนพร้อมเพย์: ${promptPayNo}`;
+            } else if (uploadedImage) {
+                // โชว์รูปที่อัปโหลด
+                html += `
+                <div class="qr-container">
+                    <div class="qr-title">📲 บัญชีสำหรับโอนเงิน</div>
+                    <img src="${uploadedImage}" alt="QR หรือ บัญชี">
+                </div>`;
             }
 
-            // แสดงปุ่มคัดลอก
+            document.getElementById('result').innerHTML = html;
+            
+            // โชว์ปุ่มคัดลอกลง LINE
             document.getElementById('btnCopy').style.display = 'block';
         }
 
-        // ฟังก์ชันสำหรับคัดลอกข้อความ
-        function copyToLine() {
-            // คำนวณใหม่รอบนึงเผื่อผู้ใช้แก้เลขบัญชีหลังกดคำนวณ
-            calculate(); 
-
-            navigator.clipboard.writeText(finalMessage).then(() => {
+        function copyToClipboard() {
+            if (!summaryTextForLine) return;
+            
+            // ใช้ API สำหรับก๊อปปี้ข้อความ
+            navigator.clipboard.writeText(summaryTextForLine).then(() => {
                 const btn = document.getElementById('btnCopy');
                 const originalText = btn.innerHTML;
-                
-                // เปลี่ยนข้อความปุ่มเพื่อให้รู้ว่าก็อปปี้แล้ว
-                btn.innerHTML = "✅ คัดลอกสำเร็จ! (เอาไปวางในแชทได้เลย)";
+                btn.innerHTML = "✅ คัดลอกแล้ว! นำไปวางใน LINE ได้เลย";
                 btn.style.backgroundColor = "#2b8c45";
-
-                // เปลี่ยนกลับเป็นเหมือนเดิมหลังจาก 3 วินาที
+                
+                // เปลี่ยนข้อความกลับหลังจาก 3 วินาที
                 setTimeout(() => {
                     btn.innerHTML = originalText;
                     btn.style.backgroundColor = "#00B900";
                 }, 3000);
             }).catch(err => {
-                alert("เกิดข้อผิดพลาดในการคัดลอก กรุณาคัดลอกด้วยตัวเองครับ");
+                alert("ไม่สามารถคัดลอกได้อัตโนมัติ กรุณาก๊อปปี้ข้อความด้วยตัวเองครับ");
             });
         }
     </script>
