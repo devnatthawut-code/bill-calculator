@@ -5,68 +5,31 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>แอปหารค่าข้าว</title>
     <style>
-        /* ตั้งค่านี้เพื่อให้ขอบเขตของกล่องไม่ล้นจอเวลาใส่ Padding */
         * { box-sizing: border-box; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; }
         
-        body { 
-            padding: 10px; 
-            max-width: 500px; 
-            margin: auto; 
-            background-color: #f0f2f5; 
-            color: #333; 
-        }
-        .card { 
-            background: white; 
-            padding: 15px; 
-            border-radius: 12px; 
-            box-shadow: 0 2px 5px rgba(0,0,0,0.05); 
-            margin-bottom: 15px; 
-            width: 100%;
-        }
+        body { padding: 10px; max-width: 500px; margin: auto; background-color: #f0f2f5; color: #333; }
+        .card { background: white; padding: 15px; border-radius: 12px; box-shadow: 0 2px 5px rgba(0,0,0,0.05); margin-bottom: 15px; width: 100%; }
         h2 { text-align: center; color: #1a73e8; margin-top: 5px; font-size: 22px; }
         h3 { font-size: 16px; margin-top: 0; margin-bottom: 12px; color: #555; border-bottom: 2px solid #eee; padding-bottom: 8px; }
         
-        /* ปรับ input ให้ฟอนต์ขนาด 16px ขึ้นไป ป้องกัน iPhone ซูมหน้าจอ */
-        input { 
+        /* แก้ไขตรงนี้: เจาะจงเฉพาะช่องพิมพ์ข้อความและตัวเลขเท่านั้น */
+        input[type="text"], input[type="number"] { 
             padding: 12px 10px; 
             border: 1px solid #ccc; 
             border-radius: 8px; 
             font-size: 16px; 
             width: 100%;
-            appearance: none; /* ลบสไตล์พื้นฐานของเบราว์เซอร์มือถือ */
+            appearance: none; 
         }
         
-        /* ปรับ Flexbox ให้จัดเรียงบนจอมือถือได้ดีขึ้น ไม่ทะลุขอบ */
-        .flex-row { 
-            display: flex; 
-            gap: 8px; 
-            margin-bottom: 10px; 
-            width: 100%;
-        }
-        .flex-row input { min-width: 0; /* ป้องกัน input ดันกล่องพัง */ }
+        .flex-row { display: flex; gap: 8px; margin-bottom: 10px; width: 100%; }
+        .flex-row input { min-width: 0; }
         
-        button { 
-            background-color: #1a73e8; 
-            color: white; 
-            border: none; 
-            padding: 12px 15px; 
-            border-radius: 8px; 
-            cursor: pointer; 
-            font-weight: bold; 
-            font-size: 16px; 
-            white-space: nowrap; 
-        }
+        button { background-color: #1a73e8; color: white; border: none; padding: 12px 15px; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; white-space: nowrap; }
         button:hover { background-color: #1557b0; }
-        button:active { transform: scale(0.98); } /* เพิ่มเอฟเฟกต์ตอนกดปุ่ม */
+        button:active { transform: scale(0.98); }
 
-        .btn-calc { 
-            background-color: #34a853; 
-            width: 100%; 
-            font-size: 18px; 
-            padding: 15px; 
-            margin-top: 5px; 
-            border-radius: 10px; 
-        }
+        .btn-calc { background-color: #34a853; width: 100%; font-size: 18px; padding: 15px; margin-top: 5px; border-radius: 10px; }
         .btn-calc:hover { background-color: #2b8c45; }
 
         .chip { display: inline-block; background: #e8f0fe; color: #1a73e8; padding: 6px 14px; border-radius: 20px; margin: 4px; font-size: 14px; font-weight: bold; }
@@ -74,7 +37,6 @@
         .item-row { border: 1px solid #eee; padding: 12px; border-radius: 8px; margin-bottom: 12px; background: #fafafa; }
         .item-title { font-weight: bold; font-size: 16px; color: #d93025; margin-bottom: 10px; }
         
-        /* ปรับหน้าตา Checkbox ให้กดง่ายขึ้นบนมือถือ */
         .checkbox-group { display: flex; flex-wrap: wrap; gap: 8px; }
         .checkbox-group label { 
             background: white; 
@@ -89,7 +51,14 @@
             user-select: none;
             -webkit-tap-highlight-color: transparent;
         }
-        .checkbox-group input { width: auto; height: 18px; width: 18px; accent-color: #1a73e8; margin: 0; }
+        /* แก้ไขตรงนี้: คืนค่าให้ Checkbox กลับมาแสดงผลติ๊กถูกได้ตามปกติ */
+        .checkbox-group input[type="checkbox"] { 
+            width: 18px; 
+            height: 18px; 
+            accent-color: #1a73e8; 
+            margin: 0; 
+            appearance: auto; 
+        }
         .checkbox-group input:checked + span { color: #1a73e8; font-weight: bold; }
         
         ul { list-style: none; padding: 0; margin: 0; }
